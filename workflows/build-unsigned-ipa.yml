@@ -1,31 +1,44 @@
 name: Build unsigned FlexGram IPA
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build for iOS device (unsigned)
-        run: |
-          xcodebuild -project FlexGram.xcodeproj \
-            -scheme FlexGram \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-      - name: Package IPA
-        run: |
-          APP_PATH="build/Build/Products/Release-iphoneos/FlexGram.app"
-          test -d "$APP_PATH"
-          mkdir -p Payload
-          cp -R "$APP_PATH" Payload/FlexGram.app
-          /usr/bin/zip -r FlexGram-unsigned.ipa Payload
-      - uses: actions/upload-artifact@v4
-        with:
-          name: FlexGram-unsigned-IPA
-          path: FlexGram-unsigned.ipa
-          if-no-files-found: error
+build:
+runs-on: macos-15
+
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+
+  - name: Check project files
+    run: |
+      ls -la
+      ls -la FlexGram.xcodeproj
+      xcodebuild -list -project FlexGram.xcodeproj
+
+  - name: Build FlexGram
+    run: |
+      xcodebuild \
+        -project FlexGram.xcodeproj \
+        -scheme FlexGram \
+        -configuration Release \
+        -sdk iphoneos \
+        -derivedDataPath build \
+        CODE_SIGNING_ALLOWED=NO \
+        build
+
+  - name: Package IPA
+    run: |
+      APP_PATH="build/Build/Products/Release-iphoneos/FlexGram.app"
+      test -d "$APP_PATH"
+      mkdir -p Payload
+      cp -R "$APP_PATH" Payload/FlexGram.app
+      zip -r FlexGram-unsigned.ipa Payload
+
+  - name: Upload IPA
+    uses: actions/upload-artifact@v4
+    with:
+      name: FlexGram-unsigned-IPA
+      path: FlexGram-unsigned.ipa
+      if-no-files-found: error
